@@ -1,0 +1,44 @@
+# =============== General Ignored Files ===================
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build and OS files
+.DS_Store
+Thumbs.db
+
+# =============== Java/Spring Boot Specific =================
+/target/
+*.class
+*.jar
+*.war
+*.zip
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# =============== Python Specific =========================
+# Virtual environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.secrets
+
+# Jupyter/temporary
+.ipynb_checkpoints
+backend/target/classes/templates/input.html
+backend/target/scouter-0.0.1-SNAPSHOT.jar.original
+backend/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+backend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+backend/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+backend/target/maven-archiver/pom.properties
+backend/target/classes/templates/index.html
+backend/target/classes/application.properties
+ai-engine/@predict_service.py

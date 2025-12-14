@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>スコア入力</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { max-width: 600px; margin-top: 30px; }
+        .error-message { color: red; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">日次スコア入力</h2>
+        
+        <div th:if="${message}" class="alert alert-success" role="alert" th:text="${message}"></div>
+
+        <form th:action="@{/register}" th:object="${scoreForm}" method="post" class="p-4 border rounded">
+            
+            <div class="mb-3">
+                <label for="targetDate" class="form-label">日付 <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="targetDate" th:field="*{targetDate}">
+                <span th:if="${#fields.hasErrors('targetDate')}" th:errors="*{targetDate}" class="error-message"></span>
+            </div>
+            
+            <hr>
+            <h5 class="mb-3">個別スコア入力 (1〜7)</h5>
+
+            <div class="mb-3">
+                <label for="focus" class="form-label">集中力</label>
+                <input type="number" class="form-control" id="focus" th:field="*{focus}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('focus')}" th:errors="*{focus}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="efficiency" class="form-label">効率</label>
+                <input type="number" class="form-control" id="efficiency" th:field="*{efficiency}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('efficiency')}" th:errors="*{efficiency}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="motivation" class="form-label">モチベーション</label>
+                <input type="number" class="form-control" id="motivation" th:field="*{motivation}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('motivation')}" th:errors="*{motivation}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="condition" class="form-label">体調</label>
+                <input type="number" class="form-control" id="condition" th:field="*{condition}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('condition')}" th:errors="*{condition}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="fatigue" class="form-label">疲労度</label>
+                <input type="number" class="form-control" id="fatigue" th:field="*{fatigue}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('fatigue')}" th:errors="*{fatigue}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="sleepQuality" class="form-label">睡眠の質</label>
+                <input type="number" class="form-control" id="sleepQuality" th:field="*{sleepQuality}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('sleepQuality')}" th:errors="*{sleepQuality}" class="error-message"></span>
+            </div>
+
+            <div class="mb-3">
+                <label for="sexualDesire" class="form-label">性欲</label>
+                <input type="number" class="form-control" id="sexualDesire" th:field="*{sexualDesire}" min="1" max="7" placeholder="3">
+                <span th:if="${#fields.hasErrors('sexualDesire')}" th:errors="*{sexualDesire}" class="error-message"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success mt-3">スコアを登録</button>
+            <a th:href="@{/}" class="btn btn-secondary mt-3">照会画面へ戻る</a>
+        </form>
+    </div>
+</body>
+</html>
