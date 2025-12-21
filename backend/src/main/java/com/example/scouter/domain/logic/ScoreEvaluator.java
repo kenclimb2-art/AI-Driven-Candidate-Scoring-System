@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 @Component
 public class ScoreEvaluator {
 
-    // 個別項目の評価（1-7）
+    // 警告が出ていたフィールド（個別スコア用）
     private static final NavigableMap<Integer, String> EVALUATION_RULES;
     static {
         TreeMap<Integer, String> map = new TreeMap<>();
@@ -25,7 +25,7 @@ public class ScoreEvaluator {
         EVALUATION_RULES = Collections.unmodifiableNavigableMap(map);
     }
 
-    // 総合スコアの評価（0.0-7.0）
+    // 総合スコア用
     private static final NavigableMap<Double, Supplier<String>> OVERALL_EVALUATION_RULES;
     static {
         TreeMap<Double, Supplier<String>> map = new TreeMap<>();
@@ -33,13 +33,25 @@ public class ScoreEvaluator {
         map.put(5.0, () -> "A: 高パフォーマンス");
         map.put(4.0, () -> "B: 安定稼働");
         map.put(3.0, () -> "C: 休息推奨");
-        map.put(2.0, () -> "D: 要注意・低調"); // 3.0未満
-        map.put(0.0, () -> "E: 限界・機能不全"); // 2.0未満
+        map.put(2.0, () -> "D: 要注意・低調");
+        map.put(0.0, () -> "E: 限界・機能不全");
         OVERALL_EVALUATION_RULES = Collections.unmodifiableNavigableMap(map);
     }
 
+    /**
+     * ★追加: 個別スコア（1-7）を評価するメソッド
+     * これを追加することで EVALUATION_RULES が使用され、警告が消えます。
+     */
+    public String evaluate(int score) {
+        // floorEntry: 指定されたキー以下の最大のキーに対応するエントリを返す
+        Map.Entry<Integer, String> entry = EVALUATION_RULES.floorEntry(score);
+        return Optional.ofNullable(entry).map(Map.Entry::getValue).orElse("---");
+    }
+    
+    /**
+     * 総合平均スコアを評価するメソッド
+     */
     public String getOverallEvaluation(double avgScore) {
-        // floorEntryを使って、現在のスコア以下の最大のキー（しきい値）を取得
         Map.Entry<Double, Supplier<String>> entry = OVERALL_EVALUATION_RULES.floorEntry(avgScore);
         return Optional.ofNullable(entry).map(Map.Entry::getValue).map(Supplier::get).orElse("---");
     }
