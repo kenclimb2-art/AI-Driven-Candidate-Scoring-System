@@ -42,3 +42,4 @@ backend/target/maven-archiver/pom.properties
 backend/target/classes/templates/index.html
 backend/target/classes/application.properties
 ai-engine/@predict_service.py
+/backend/target
