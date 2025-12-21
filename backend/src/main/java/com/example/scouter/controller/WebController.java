@@ -92,9 +92,9 @@ public class WebController {
         return "redirect:/";
     }
 
-    // WebController.java に追加
+    // WebController.java
     @GetMapping("/api/predictions")
-    @ResponseBody // JSONとして返す
+    @ResponseBody
     public List<PredictionScore> getPredictionsApi() {
         return predictionScoreRepository.findAllByOrderByTargetDateAsc();
     }
