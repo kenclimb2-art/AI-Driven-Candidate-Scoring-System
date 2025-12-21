@@ -1,56 +1,63 @@
 📚 Personal Scouter: 体調スコア予測システム
 1. 💡 プロジェクト概要
-本プロジェクトは、過去の体調スコアデータ（Daily Score）を基に、**AIモデル（Python/scikit-learn）**を用いて将来の体調を予測し、その結果をWebアプリケーション（Java/Spring Boot）にリアルタイムで表示するハイブリッド分散システムです。
-
-JavaとPythonという異なる技術スタック間を、Apache Kafkaというメッセージングプラットフォームを介して非同期連携させることで、予測処理の分離と高いスケーラビリティを実現しました。
-
+本プロジェクトは、日々のパフォーマンスデータを基に、**AI（Python/scikit-learn）**を用いて将来の体調を予測し、その結果をWebアプリケーション（Java/Spring Boot）で可視化するハイブリッド分散システムです。
+単なる平均計算ではなく、**「疲労による減衰」や「生命力の過剰燃焼（オーバーヒート）」**を考慮した独自の「スカウター・アルゴリズム」を搭載しており、持続可能な高パフォーマンス状態（黄金比：性欲5・疲労1）の維持を支援します。
 2. 🏗️ システムアーキテクチャ
-システムは、以下の主要なコンポーネントで構成されるイベント駆動型アーキテクチャを採用しています。
-
+JavaとPythonという異なる技術スタック間を、Apache Kafkaを介して非同期連携させるイベント駆動型アーキテクチャを採用しています。
 コンポーネント	技術スタック	役割
-フロントエンド/バックエンド	Java / Spring Boot / Thymeleaf	ユーザー入力、過去データの表示、予測依頼、予測結果の表示。
-AI予測エンジン	Python / Kafka-python / scikit-learn	Kafkaからデータを受信し、線形回帰モデルで将来7日間のスコアを予測。
-メッセージブローカー	Apache Kafka	JavaとPython間の非同期メッセージングを担うハブ。データパイプラインの中核。
-データベース	H2 Database (or MySQL/PostgreSQL)	過去の体
+Backend	Java 17 / Spring Boot 3.5.x	ユーザー管理、実績データのUPSERT、Kafka連携、予測データの永続化
+AI Engine	Python 3.12 / scikit-learn / Pandas	線形回帰モデルによる将来7日間のコンディション予測
+Messaging	Apache Kafka	システム間の非同期メッセージング・ハブ
+Database	PostgreSQL (Docker)	実績データ（DailyScore）および予測データ（PredictionScore）の永続化
+Frontend	Thymeleaf / Bootstrap 5 / JS	スコア入力、ダッシュボード表示、非同期データの自動ポーリング更新
+3. 🧠 スカウター・ロジック（厳格査定アルゴリズム）
+本システムは、以下の独自ロジックに基づいて「真のコンディション」を算出します。
+⚖️ ネット・パフォーマンス計算
+疲労以外の6項目（集中、効率、意欲、体調、睡眠、性欲）の平均から、疲労度に応じたペナルティを差し引きます。
+🔴 スーパーリビドーモード (性欲: 7)
+短期的な出力は向上しますが、システムに過負荷がかかる「オーバークロック」状態です。
+ブースト: ベーススコア微増
+ペナルティ: 疲労の影響が 3倍 に増幅、さらに固定のシステム負荷が発生。
+判定: 疲労が蓄積している場合、スコアは急落し「CRITICAL: OVERHEAT」警告が表示されます。
+🔵 賢者モード (性欲: 1)
+精神的安定と回復を優先した「安定稼働」状態です。
+ボーナス: 疲労によるスコア減衰を 50%緩和。
+4. 🔄 非同期データフロー & UX
+Request: ユーザーが「予測エンジン起動」を押すと、JavaがDBをクリアしKafkaへ依頼を送信。
+Processing: Pythonがメッセージを受信し、Javaと同じロジックで学習・予測を実行。
+Persistence: JavaのConsumerが結果を受信し、PredictionScore テーブルに永続化。
+Auto-Refresh: フロントエンドのJavaScriptがAPIをポーリングし、データ到着を検知すると自動で画面をリロードします。
+5. 🚀 セットアップと実行
+前提条件
+Docker / Docker Compose
+Java 17+
+Python 3.12
+手順
+インフラの起動
+code
+Bash
+docker-compose up -d
+Pythonエンジンの起動
+code
+Bash
+cd python-service
+pip install -r requirements.txt
+python predict_service.py
+Javaアプリケーションの起動
+code
+Bash
+./mvnw spring-boot:run
+アクセス
+http://localhost:8081
+6. 🛠️ 技術的特徴（リファクタリングの成果）
+型安全性の確保: Java Record (DTO) の導入と、厳格なNull安全アノテーションの適用。
+データ整合性: 日付をキーとしたUPSERTロジックにより、重複データを排除。
+クリーンコード: ドメイン駆動設計（DDD）の考え方を取り入れ、計算ロジックをEntityに集約。
+スケーラビリティ: Kafkaによる疎結合な設計により、将来的なAIモデルの差し替えが容易。
+💡 今後のロードマップ
 
-3. 💾 連携のためのデータフロー
-予測実行は以下の非同期なデータフローに従って動作します。
+予測精度向上のためのLSTMモデルへの移行
 
-1.リクエスト送信 (Java → Kafka):
-ユーザーがWeb画面で予測ボタンを押す。
-BatchRunService がDBから全履歴データを取得し、JSON形式でKafkaの scouter.score.input トピックに送信。
+Chart.jsによるスコア推移の可視化グラフ
 
-2.予測処理 (Python):
-Pythonのコンシューマが scouter.score.input からメッセージを受信。
-データを使って線形回帰モデルを学習し、将来の予測スコアを生成。
-
-3.結果送信 (Python → Kafka):
-Pythonが予測結果リストをJSON形式のメッセージ（PredictionResponse）としてKafkaの scouter.prediction.result トピックに送信。
-
-4.結果受信 (Java):
-Javaの PredictionResultConsumer が scouter.prediction.result からメッセージを受信。
-JSONを PredictionResponse オブジェクトに正しくデシリアライズし、メモリ（latestPredictions）に保持。
-
-5.表示:
-Web画面リロード時（または次の予測リクエスト完了後のリダイレクト時）に、Controllerが最新の予測結果を取得し、画面に表示。
-
-4. ⚔️ 検証で得られた重要な知見 (技術的課題と解決)
-今回のプロジェクト検証では、単なる機能実装を超え、非同期連携システム特有の以下の課題に直面し、解決しました。
-
-課題	詳細	解決策
-A. データ構造の不一致	Pythonが送信する予測結果のリスト構造が、JavaのPOJO (PredictionDataのリスト) にうまくデシリアライズできない。	Java側でリスト全体を包含するラッパーオブジェクト (PredictionResponse) を定義し、@KafkaListener の引数をラッパー型に変更することで解決。
-B. 予測データの鮮度 (1サイクルラグ)	データを登録した直後に予測を実行しても、最新のデータが反映されない場合がある。	予測実行直前に短い時間 (Thread.sleep(100)) を設けることで、DBトランザクションのコミット遅延を回避し、最新データの取得を保証。 (※将来的にイベント駆動で解決推奨)
-C. リアルタイム描画の安定性	SSEを導入しリアルタイム化を試みたが、ブラウザの切断による IOException が多発し、アプリケーションが不安定化。	一時的にSSEを削除し、安定性を優先した同期（リロードベース）の動作に戻す。 UI側でボタン連打防止のJS処理を加えることで、競合によるエラーを抑制。
-
-5. 🚀 実行方法
-（※ここでは環境構築手順は省略し、必要なコンポーネントのみ記載します。）
-
-1.KafkaとPython環境の準備: Kafkaブローカーを起動し、PythonのAI予測エンジン（predict_service.py）を実行しておく。
-
-2.Javaアプリケーションの起動: Spring BootアプリケーションをIDEまたはmvn spring-boot:runで起動。
-
-3.Webアクセス: ブラウザで http://localhost:8081/ にアクセス。
-
-4.予測実行: 画面上の「🚀 予測エンジン起動 (Kafka連携)」ボタンを押すと、非同期で予測が実行されます。
-
-5.結果確認: 結果は非同期でJavaに戻され、画面をリロードすることで最新の結果が表示されます。
+Spring Securityによるマルチユーザー対応

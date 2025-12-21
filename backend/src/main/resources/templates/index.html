@@ -2,151 +2,191 @@
 <html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Personal Scouter - 照会画面</title>
+    <title>Personal Scouter - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .container { max-width: 1200px; margin-top: 30px; }
-        .error-message { color: red; font-weight: bold; }
-        th { background-color: #f8f9fa; text-align: center;}
-        td { text-align: center; }
-        .prediction-panel { border: 1px solid #cce5ff; background-color: #eaf5ff; padding: 20px; margin-bottom: 20px; border-radius: 5px; }
-        .success-message { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; padding: 10px; margin-bottom: 15px; border-radius: 4px; }
-        /* SSE関連のスタイルは不要だが残す */
-        .realtime-message { color: #004085; background-color: #cce5ff; border-color: #b8daff; padding: 10px; margin-bottom: 15px; border-radius: 4px; transition: opacity 0.5s; }
+        .error-message { color: #dc3545; font-weight: bold; }
+        th { background-color: #f8f9fa; text-align: center; vertical-align: middle; }
+        td { text-align: center; vertical-align: middle; }
+        .prediction-panel { border: 1px solid #cce5ff; background-color: #f0f7ff; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .success-message { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; padding: 12px; margin-bottom: 15px; border-radius: 6px; }
+        .animate-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4">コンディションスコア照会</h2>
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📊 コンディションスコア照会</h2>
+            <a th:href="@{/input}" class="btn btn-primary">➕ スコア入力</a>
+        </header>
         
-        <a th:href="@{/input}" class="btn btn-info mb-3">スコア入力へ</a>
-
-        <form th:action="@{/search}" action="/search" th:object="${searchForm}" method="get" class="p-3 mb-4 border rounded">
+        <form th:action="@{/search}" th:object="${searchForm}" method="get" class="p-3 mb-4 border rounded bg-light">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label for="startDate" class="form-label">開始日</label>
                     <input type="date" class="form-control" id="startDate" th:field="*{startDate}">
-                    <span th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}" class="error-message"></span>
                 </div>
-                
                 <div class="col-md-4">
                     <label for="endDate" class="form-label">終了日</label>
                     <input type="date" class="form-control" id="endDate" th:field="*{endDate}">
-                    <span th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}" class="error-message"></span>
                 </div>
-                
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary w-100">照会実行</button>
+                    <button type="submit" class="btn btn-outline-primary w-100">🔍 照会実行</button>
                 </div>
             </div>
         </form>
 
-        <div class="prediction-panel">
-            <h4 class="mb-3">📈 未来予測データ作成 (Python連携)</h4>
-            
+        <div class="prediction-panel shadow-sm">
+            <h4 class="mb-3">📈 未来予測データ作成 (AI連携)</h4>
             <div th:if="${message}" th:text="${message}" class="success-message"></div>
             
-            <form th:action="@{/batch/run}" method="post" 
-                  onsubmit="document.getElementById('predict-button').disabled = true; 
-                            document.getElementById('predict-button').textContent = '処理中...'; 
-                            return true;" 
-                  class="row g-3 align-items-center">
-                <div class="col-auto">
-                    <p class="mb-0">Kafkaを経由して、AIエンジン(Python)に予測を依頼します。</p>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" id="predict-button" class="btn btn-warning">🚀 予測エンジン起動 (Kafka連携)</button>
+            <form th:action="@{/batch/run}" method="post">
+                <div class="d-flex align-items-center gap-3">
+                    <p class="mb-0 text-muted">Kafkaを介してPythonエンジンに予測を依頼します。</p>
+                    <button type="submit" id="predict-button" class="btn btn-warning">🚀 予測エンジン起動</button>
                 </div>
             </form>
             
-            <div th:if="${predictions != null and !predictions.empty}" class="mt-4" id="prediction-results-area">
+            <div th:if="${predictions != null and !predictions.empty}" class="mt-4">
                 <hr>
-                <h5 class="text-primary">🤖 AIによる来週の体調予測 (Linear Regression)</h5>
-                
-                <table class="table table-sm table-bordered table-hover" style="background-color: white;">
+                <h5 class="text-primary mb-3">🤖 AIによる来週の体調予測 (DB保存済み)</h5>
+                <table class="table table-sm table-bordered table-hover bg-white">
                     <thead class="table-primary">
                         <tr>
-                            <th class="text-center">予測日</th>
-                            <th class="text-center">予測体調スコア (1-7)</th>
-                            <th class="text-center">判定</th>
+                            <th>予測日</th>
+                            <th>予測スコア (1-7)</th>
+                            <th>判定</th>
                         </tr>
                     </thead>
                     <tbody> 
                         <tr th:each="pred : ${predictions}">
-                            <td class="text-center" th:text="${pred.date}"></td> 
-                            <td class="text-center" th:text="${#numbers.formatDecimal(pred.predictedScore, 1, 2)}" style="font-weight: bold;"></td>
-                            <td class="text-center" th:with="score=${pred.predictedScore}">
-                                <span th:if="${score >= 6.0}" class="badge bg-success">絶好調</span>
-                                <span th:if="${score >= 5.0 and score < 6.0}" class="badge bg-success">好調</span>
-                                <span th:if="${score >= 3.0 and score < 5.0}" class="badge bg-warning text-dark">普通</span>
-                                <span th:if="${score < 3.0}" class="badge bg-danger">不調警戒</span>
+                            <td th:text="${pred.targetDate}"></td> 
+                            <td th:text="${#numbers.formatDecimal(pred.predictedScore, 1, 2)}" class="fw-bold"></td>
+                            <td>
+                                <span th:if="${pred.predictedScore >= 6.0}" class="badge bg-success">絶好調</span>
+                                <span th:if="${pred.predictedScore >= 5.0 and pred.predictedScore < 6.0}" class="badge bg-success">好調</span>
+                                <span th:if="${pred.predictedScore >= 3.0 and pred.predictedScore < 5.0}" class="badge bg-warning text-dark">普通</span>
+                                <span th:if="${pred.predictedScore < 3.0}" class="badge bg-danger">不調警戒</span>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-
-            <div th:if="${predictions == null or predictions.empty}" class="mt-4" id="no-predictions-area">
-                <hr class="mt-3 mb-3"/>
-                <h5>連携について</h5>
-                <ol style="font-size: 0.9em;">
-                    <li>上記ボタンを押すと、Kafkaメッセージを送信し、Python予測エンジンを起動します。</li>
-                    <li>結果は非同期で処理されますが、**画面はリロード後に更新されます**。</li>
-                </ol>
-            </div>
         </div>
 
         <div th:if="${scores != null and !scores.empty}" class="mt-4">
             <h4 class="mb-3">検索結果 (<span th:text="${#lists.size(scores)}"></span> 件)</h4>
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="vertical-align: middle;">日付</th>
-                        <th colspan="7" class="text-center">個別スコア (1-7)</th>
-                        <th colspan="2" rowspan="2" style="vertical-align: middle;">総合評価</th>
-                    </tr>
-                    <tr>
-                        <th>集中力</th><th>効率</th><th>モチベーション</th><th>体調</th>
-                        <th>疲労</th><th>睡眠の質</th><th>性欲</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="score : ${scores}">
-                        <td th:text="${score.date}"></td> <td th:text="${score.focusScore}"></td> 
-                        <td th:text="${score.efficiencyScore}"></td>
-                        <td th:text="${score.motivationScore}"></td>
-                        <td th:text="${score.conditionScore}"></td>
-                        <td th:text="${score.fatigueScore}"></td>
-                        <td th:text="${score.sleepScore}"></td>
-                        <td th:text="${score.sexualDesireScore}"></td>
-                        
-                        <td th:text="${#numbers.formatDecimal(score.avgScore, 1, 2)}"></td>
-                        <td th:text="${score.overallEvaluation}"></td>
-
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">日付</th>
+                            <th colspan="7">個別スコア (1-7)</th>
+                            <th colspan="2" rowspan="2">総合評価</th>
+                        </tr>
+                        <tr>
+                            <th>集中</th><th>効率</th><th>意欲</th><th>体調</th>
+                            <th>疲労</th><th>睡眠</th><th>性欲</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="score : ${scores}">
+                            <td th:text="${score.date}"></td>
+                            <td th:text="${score.focusScore}"></td>
+                            <td th:text="${score.efficiencyScore}"></td>
+                            <td th:text="${score.motivationScore}"></td>
+                            <td th:text="${score.conditionScore}"></td>
+                            <td th:text="${score.fatigueScore}"></td>
+                            <td th:text="${score.sleepScore}"></td>
+                            <td th:text="${score.sexualDesireScore}"></td>
+                            <td th:text="${#numbers.formatDecimal(score.avgScore, 1, 2)}" class="fw-bold"></td>
+                            <td>
+                                <div th:text="${score.overallEvaluation}"></div>
+                                <div th:if="${score.sexualDesireScore == 7}" class="mt-1">
+                                    <span class="badge bg-danger p-2 shadow-sm animate-pulse">⚠️ CRITICAL: OVERHEAT</span>
+                                    <div class="text-danger small fw-bold mt-1" style="font-size: 0.75rem; line-height: 1.2;">
+                                        ★スーパーリビドーモード！<br>生命力過剰燃焼 / 即刻休息を推奨
+                                    </div>
+                                </div>
+                                <div th:if="${score.sexualDesireScore == 1}" class="mt-1">
+                                    <span class="badge bg-primary p-2 shadow-sm">🧘 SAGE MODE</span>
+                                    <div class="text-primary small fw-bold mt-1" style="font-size: 0.75rem; line-height: 1.2;">
+                                        ★賢者モード！<br>システム安定 / 回復優先状態
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
-        <div th:if="${(scores == null or scores.empty) and (searchForm == null or #lists.isEmpty(#fields.allErrors()))}" class="mt-4">
-             <p class="text-secondary">検索条件を入力して照会を実行してください。</p>
+        <div th:if="${scores != null and scores.empty}" class="alert alert-light border text-center mt-4">
+            <p class="mb-0 text-secondary">該当するデータがありません。条件を変えて検索してください。</p>
         </div>
     </div>
-    
-    <script>
-    /* 予測実行後にリダイレクトで戻ってきた際、ボタンを元に戻すためのJS */
+
+    <!-- index.html の予測結果表示エリアに ID を付与 -->
+    <div id="prediction-results-container">
+        <!-- ここにテーブルが表示される -->
+    </div>
+
+    <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function() {
         const button = document.getElementById('predict-button');
         const message = document.querySelector('.success-message');
-        
-        // メッセージが表示されている場合（＝予測リクエストを送信した後）
         if (message && button) {
-             // 予測結果を待つ間、ユーザーはページをリロードしている可能性が高いため、
-             // 初期ロード時にボタンを元に戻して再利用可能にする
              button.disabled = false;
-             button.textContent = '🚀 予測エンジン起動 (Kafka連携)';
+             button.textContent = '🚀 予測エンジン起動';
         }
     });
+
+    function startPolling() {
+        console.log("🔄 ポーリング開始...");
+        
+        const intervalId = setInterval(async () => {
+            try {
+                const response = await fetch('/api/predictions');
+                const data = await response.json();
+                
+                // データが0件から増えた（＝Pythonの結果が届いてDBに保存された）かチェック
+                if (data && data.length > 0) {
+                    console.log("✅ データ受信！画面を更新します。");
+                    clearInterval(intervalId);
+                    location.reload(); // ページをリロードして最新状態を表示
+                }
+            } catch (error) {
+                console.error("Polling error:", error);
+            }
+        }, 2000); // 2秒おき
+    }
+
+    // フォーム送信時の処理
+    document.querySelector('form[action="/batch/run"]').onsubmit = function(e) {
+        e.preventDefault(); // 通常の画面遷移を止める
+        
+        const button = document.getElementById('predict-button');
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 🧠 AI解析中...';
+        
+        // 非同期で予測リクエストを送信
+        fetch(this.action, { 
+            method: 'POST',
+            // Spring Securityを使っている場合はCSRFトークンが必要になる場合があります
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(response => {
+            console.log("🚀 予測リクエスト送信完了。結果を待機します。");
+            startPolling(); // ポーリング開始
+        }).catch(error => {
+            console.error("Request error:", error);
+            button.disabled = false;
+            button.innerHTML = '🚀 予測エンジン起動';
+        });
+
+        return false;
+    };
     </script>
 </body>
 </html>

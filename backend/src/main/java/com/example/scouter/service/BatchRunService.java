@@ -1,13 +1,16 @@
 package com.example.scouter.service;
 
 import java.util.List;
+import java.util.Objects;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.scouter.domain.model.DailyScore;
 import com.example.scouter.domain.model.KafkaScoreRequest;
 import com.example.scouter.repository.DailyScoreRepository;
+import com.example.scouter.repository.PredictionScoreRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,26 +20,30 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BatchRunService {
 
-    private final DailyScoreRepository dailyScoreRepository;
-    private final KafkaTemplate<String, KafkaScoreRequest> kafkaTemplate; // ★NEW: KafkaTemplateを注入
+    // 全てのフィールドに @NonNull を付与し、Lombokのコンストラクタ注入を確実にします
+    private final @NonNull DailyScoreRepository dailyScoreRepository;
+    private final @NonNull KafkaTemplate<String, KafkaScoreRequest> kafkaTemplate;
+    private final @NonNull PredictionScoreRepository predictionScoreRepository;
 
-    // Python AI Engineにデータを送り、予測を依頼する (Producer)
-    @Transactional(readOnly = true)
+    /**
+     * Python AI Engineにデータを送り、予測を依頼する (Producer)
+     * 削除処理を含むため、readOnly = true は外します。
+     */
+    @Transactional
     public String runPredictionEngine() {
         log.info("--- 🚀 Kafka連携: 予測エンジン起動処理開始 ---");
 
-        // ★修正箇所: -------------------------------------------------------------
-        // 直前のDB書き込み処理（データ登録）のコミット完了を待つため、短時間スリープ
+        // 1. 新しい予測を開始するので、古い予測をクリアする（ポーリング検知用）
+        predictionScoreRepository.deleteAllInBatch();
+
+        // 既存ロジック維持: 直前のDB書き込みのコミット完了を待つためのスリープ
         try {
-            // 100ミリ秒待機。これにより、ほとんどの環境で最新データが読み取れるようになる
             Thread.sleep(100); 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        // ----------------------------------------------------------------------
 
-        // 1. DBから全履歴データを取得
-        // Kafkaに送るデータは、AIエンジンが処理しやすいように全履歴とする
+        // 2. DBから全履歴データを取得
         List<DailyScore> historyData = dailyScoreRepository.findAll();
         
         if (historyData.isEmpty()) {
@@ -44,22 +51,21 @@ public class BatchRunService {
             return "履歴データがありません。";
         }
         
-        // 2. Kafkaリクエスト用のDTOを作成
-        // このDTOがJSON形式でKafkaに送られます
+        // 3. Kafkaリクエスト用のDTOを作成
         KafkaScoreRequest request = new KafkaScoreRequest(historyData);
 
-        // 3. Kafka Topicにメッセージを送信 (Produce)
+        // 4. Kafka Topicにメッセージを送信 (Produce)
         final String topic = "scouter.score.input";
         
-        // keyとしてmessageIdを使うと、同じIDのメッセージが同じパーティションに送られやすくなる
-        kafkaTemplate.send(topic, request.getMessageId(), request); 
+        // Objects.requireNonNull を使用して、引数が @NonNull String であることを保証
+        kafkaTemplate.send(
+            Objects.requireNonNull(topic), 
+            Objects.requireNonNull(request.getMessageId()), 
+            request
+        ); 
         
         log.info("✅ Kafka Topic '{}' に予測依頼メッセージ (ID: {}) を送信しました。", topic, request.getMessageId());
         
-        // 4. ファイル連携と違い、ここではPythonの完了を待たない（非同期）
         return "予測依頼をAIエンジンに送信しました。結果は非同期で反映されます。";
     }
-
-    /* * NOTE: 以前のファイル出力やProcessBuilder関連のメソッドは全て削除されました。
-     */
 }

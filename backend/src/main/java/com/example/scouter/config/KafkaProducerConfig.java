@@ -10,6 +10,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.lang.NonNull; // 追加
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,28 +26,30 @@ public class KafkaProducerConfig {
     private String bootstrapServers;
 
     @Bean
+    @NonNull
     public ProducerFactory<String, KafkaScoreRequest> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         
-        // Serializerクラスの設定は、DefaultKafkaProducerFactoryのコンストラクタで直接インスタンスを渡すため、propsから削除します。
-        // configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class); 
-        // configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-
-        // JsonSerializerの追加設定も直接インスタンスに適用します。
-        // configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false); 
+        // JsonSerializerのインスタンスを作成し、詳細設定を行う
+        JsonSerializer<KafkaScoreRequest> jsonSerializer = new JsonSerializer<>();
         
-        // Producer FactoryにKey/Value Serializerを直接渡すことで、propsとの競合を回避します。
+        // Python側でデシリアライズしやすくするため、Java固有の型情報ヘッダーを付与しない設定
+        // これにより、純粋なJSONとして送信される
+        jsonSerializer.setAddTypeInfo(false);
+
         return new DefaultKafkaProducerFactory<>(
-            configProps, // configPropsにはBOOTSTRAP_SERVERSのみを残す
+            configProps,
             new StringSerializer(), 
-            new JsonSerializer<>()
+            jsonSerializer
         );
     }
 
     @Bean
-    public KafkaTemplate<String, KafkaScoreRequest> kafkaTemplate() {
-        // Springコンテナに KafkaTemplate のBeanを登録する
-        return new KafkaTemplate<>(producerFactory());
+    @NonNull
+    public KafkaTemplate<String, KafkaScoreRequest> kafkaTemplate(
+            @NonNull ProducerFactory<String, KafkaScoreRequest> producerFactory) { // 引数で注入
+        
+        return new KafkaTemplate<>(producerFactory);
     }
 }

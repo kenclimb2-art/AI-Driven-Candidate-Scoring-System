@@ -1,61 +1,52 @@
 package com.example.scouter.service;
 
-import com.example.scouter.domain.model.PredictionData;
-import com.example.scouter.domain.model.PredictionResponse; 
+import com.example.scouter.domain.model.PredictionResponse;
+import com.example.scouter.domain.model.PredictionScore;
+import com.example.scouter.repository.PredictionScoreRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.lang.NonNull;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
-// SSE関連のimportは削除 (SseEmitter, IOException, CopyOnWriteArrayList)
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
-// CopyOnWriteArrayList は削除
+import java.util.Objects; // 追加
+import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class PredictionResultConsumer {
 
-    // 予測結果を一時的にメモリに保持するための変数
-    private volatile List<PredictionData> latestPredictions = Collections.emptyList();
+    private final @NonNull PredictionScoreRepository predictionRepository;
 
-    // SSE接続リスト (sseEmitters) は削除
-    
-    // Pythonが結果を返すトピック名
-    private static final String TOPIC_OUTPUT = "scouter.prediction.result";
-
-    /**
-     * Kafkaから予測結果メッセージを受信するメソッド。
-     */
-    @KafkaListener(topics = TOPIC_OUTPUT, groupId = "scouter-java-consumer-group",
+    @Transactional
+    @KafkaListener(topics = "scouter.prediction.result", groupId = "scouter-java-consumer-group",
                    containerFactory = "kafkaListenerContainerFactory")
-    public void consumePredictionResults(PredictionResponse response) {
+    public void consumePredictionResults(@Payload PredictionResponse response) {
         
-        // リストは response オブジェクトから取得する
-        List<PredictionData> predictions = response != null ? response.getPredictions() : Collections.emptyList();
-        
-        if (!predictions.isEmpty()) {
-            this.latestPredictions = predictions;
-            System.out.println(">>>>>> ✅ Kafka CONSUMER: 予測結果メッセージを受信しました。データ数: " + predictions.size());
-            System.out.println(">>>>>> 🕒 受信データ (ID: " + response.getMessageId() + "): " + predictions.toString());
-            // SSE通知ロジック (notifyClients) は削除
-        } else {
-            System.out.println(">>>>>> ⚠️ Kafka CONSUMER: 空の予測結果を受信しました。");
+        if (response == null || response.getPredictions() == null) {
+            log.warn(">>>>>> ⚠️ Kafka CONSUMER: 無効なメッセージを受信しました。");
+            return;
         }
-    }
 
-    // addEmitter() メソッドは削除
+        // 1. 古い予測データを全削除
+        predictionRepository.deleteAllInBatch();
 
-    // notifyClients() メソッドは削除
-    
-    /**
-     * Webコントローラやサービスから、最新の予測結果を取得するためのゲッター。
-     */
-    public List<PredictionData> getLatestPredictions() {
-        return latestPredictions;
-    }
-    
-    /**
-     * 予測結果をクリアするメソッド（オプション）。
-     */
-    public void clearPredictions() {
-        this.latestPredictions = Collections.emptyList();
+        // 2. 受信したデータをエンティティに変換
+        List<PredictionScore> entities = response.getPredictions().stream()
+            .map(p -> new PredictionScore(p.getDate(), p.getPredictedScore()))
+            .collect(Collectors.toList());
+
+        // 3. DBに保存
+        // Objects.requireNonNull を使用して @NonNull Iterable への適合を明示
+        if (!entities.isEmpty()) {
+            predictionRepository.saveAll(Objects.requireNonNull(entities));
+        }
+
+        log.info(">>>>>> ✅ Kafka CONSUMER: 予測データ {} 件をDBに保存しました。 (ID: {})", 
+                 entities.size(), response.getMessageId());
     }
 }
