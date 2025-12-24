@@ -11,6 +11,7 @@ public record ScoreResponse(
     int efficiencyScore,
     int motivationScore,
     int conditionScore,
+    int discipline,
     int fatigueScore,
     int sleepScore,
     int sexualDesireScore,

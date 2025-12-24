@@ -28,12 +28,13 @@
             <h5 class="mb-3 text-secondary">個別スコア (1〜7)</h5>
 
             <!-- 各項目のループ的な記述も可能ですが、明示的にバリデーションを配置 -->
-            <div th:each="field : ${ {'focus', 'efficiency', 'motivation', 'condition', 'fatigue', 'sleepQuality', 'sexualDesire'} }" class="mb-3">
+            <div th:each="field : ${ {'focus', 'efficiency', 'motivation', 'condition', 'discipline', 'fatigue', 'sleepQuality', 'sexualDesire'} }" class="mb-3">
                 <label th:for="${field}" class="form-label" th:text="${
                     field == 'focus' ? '集中力' : 
                     field == 'efficiency' ? '効率' : 
                     field == 'motivation' ? 'モチベーション' : 
                     field == 'condition' ? '体調' : 
+                    field == 'discipline' ? '規律' : 
                     field == 'fatigue' ? '疲労度' : 
                     field == 'sleepQuality' ? '睡眠の質' : '性欲'
                 }"></label>

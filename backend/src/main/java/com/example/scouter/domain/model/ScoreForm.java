@@ -26,6 +26,9 @@ public class ScoreForm {
     private int condition = 3; // デフォルト：3
 
     @Min(1) @Max(7)
+    private int discipline = 3; // デフォルト：3
+
+    @Min(1) @Max(7)
     private int fatigue = 3; // デフォルト：3
 
     @Min(1) @Max(7)

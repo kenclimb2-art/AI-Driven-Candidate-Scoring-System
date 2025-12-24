@@ -27,6 +27,7 @@ public class DailyScore {
     private int fatigue;
     private int sleepQuality;
     private int sexualDesire;
+    private int discipline;
 
     /**
      * ドメインロジック: 総合コンディションスコアの計算 (厳格査定版)
@@ -34,8 +35,8 @@ public class DailyScore {
     public double calculateAverage() {
         // 1. 疲労以外の6項目の平均 (1.0 〜 7.0)
         double positiveSum = focus + efficiency + motivation + condition + 
-                             sleepQuality + sexualDesire;
-        double baseAvg = positiveSum / 6.0;
+                             discipline + sleepQuality + sexualDesire;
+        double baseAvg = positiveSum / 7.0;
 
         // 2. 疲労ペナルティの基本値 (0.0 〜 1.0)
         double fatiguePenalty = (fatigue - 1) / 6.0;
@@ -60,12 +61,15 @@ public class DailyScore {
         return Math.min(7.0, Math.max(1.0, finalScore));
     }
 
-    public DailyScore(LocalDate targetDate, int focus, int efficiency, int motivation, int condition, int fatigue, int sleepQuality, int sexualDesire) {
+    public DailyScore(LocalDate targetDate, int focus, int efficiency,
+        int motivation, int condition, int discipline, int fatigue,
+        int sleepQuality, int sexualDesire) {
         this.targetDate = targetDate;
         this.focus = focus;
         this.efficiency = efficiency;
         this.motivation = motivation;
         this.condition = condition;
+        this.discipline = discipline;
         this.fatigue = fatigue;
         this.sleepQuality = sleepQuality;
         this.sexualDesire = sexualDesire;

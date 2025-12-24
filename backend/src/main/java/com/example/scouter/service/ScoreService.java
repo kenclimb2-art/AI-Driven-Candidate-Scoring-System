@@ -43,6 +43,7 @@ public class ScoreService {
             score.getEfficiency(),
             score.getMotivation(),
             score.getCondition(),
+            score.getDiscipline(),
             score.getFatigue(),
             score.getSleepQuality(),
             score.getSexualDesire(),
@@ -61,6 +62,7 @@ public class ScoreService {
         dailyScore.setEfficiency(form.getEfficiency());
         dailyScore.setMotivation(form.getMotivation());
         dailyScore.setCondition(form.getCondition());
+        dailyScore.setDiscipline(form.getDiscipline());
         dailyScore.setFatigue(form.getFatigue());
         dailyScore.setSleepQuality(form.getSleepQuality());
         dailyScore.setSexualDesire(form.getSexualDesire());

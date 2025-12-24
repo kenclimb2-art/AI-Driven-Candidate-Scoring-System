@@ -1,0 +1,49 @@
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker-compose exec db psql -U postgres -d scouter_db -c "SELECT setval('daily_score_id_seq', (SELECT COALESCE(MAX(id), 1) FROM daily_score));"
+service "db" is not running
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker-compose up -d
+[+] Running 3/3
+ ✔ Container scouter-zookeeper  Running                                                         0.0s 
+ ✔ Container scouter-kafka      Running                                                         0.0s 
+ ✔ Container scouter-kafka-ui   Running                                                         0.0s 
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker-compose ps
+NAME                IMAGE                             COMMAND                   SERVICE     CREATED      STATUS          PORTS
+scouter-kafka       confluentinc/cp-kafka:7.5.0       "/etc/confluent/dock…"   kafka       9 days ago   Up 33 minutes   0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+scouter-kafka-ui    provectuslabs/kafka-ui:latest     "/bin/sh -c 'java --…"   kafka-ui    9 days ago   Up 38 minutes   0.0.0.0:8090->8080/tcp, [::]:8090->8080/tcp
+scouter-zookeeper   confluentinc/cp-zookeeper:7.5.0   "/etc/confluent/dock…"   zookeeper   9 days ago   Up 38 minutes   0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker-compose exec db psql -U postgres -d scouter_db -c "SELECT setval('daily_score_id_seq', (SELECT COALESCE(MAX(id), 1) FROM daily_score));"
+service "db" is not running
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Ports}}"
+CONTAINER ID   NAMES               IMAGE                             PORTS
+8532c90a9507   scouter-kafka-ui    provectuslabs/kafka-ui:latest     0.0.0.0:8090->8080/tcp, [::]:8090->8080/tcp
+8b4fc8cf8f95   scouter-kafka       confluentinc/cp-kafka:7.5.0       0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+efec055300f3   scouter-zookeeper   confluentinc/cp-zookeeper:7.5.0   0.0.0.0:2181->2181/tcp, [::]:2181->2181/tcp
+d0ce56258911   scouter-db          postgres:15-alpine                0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker exec scouter-db psql -U postgres -d scouter_db -c "SELECT setval('daily_score_id_seq', (SELECT COALESCE(MAX(id), 1) FROM daily_score));"
+psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  role "postgres" does not exist
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker exec scouter-db env | grep POSTGRES_USER
+POSTGRES_USER=user
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker exec scouter-db psql -U user -d scouter_db -c "SELECT setval('daily_score_id_seq', (SELECT COALESCE(MAX(id), 1) FROM daily_score));"
+ setval 
+--------
+     71
+(1 row)
+
+
+kencl@MSI MINGW64 /c/Java/scouter-project (main)
+$ docker exec scouter-db psql -U user -d scouter_db -c "SELECT setval('daily_score_id_seq', (SELECT COALESCE(MAX(id), 1) FROM daily_score));"

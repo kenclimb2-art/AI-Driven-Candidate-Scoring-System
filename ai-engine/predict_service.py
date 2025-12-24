@@ -32,10 +32,17 @@ class PredictionEngine:
     def calculate_scouter_score(self, df: pd.DataFrame):
         """
         Java側の『厳格査定ロジック』をPythonで再現。
+        discipline（規律）を condition の次に追加。
         """
-        # 1. 疲労以外の6項目の平均
-        pos_cols = ['focus', 'efficiency', 'motivation', 'condition', 'sleepQuality', 'sexualDesire']
-        base_avg = df[pos_cols].mean(axis=1)
+        # 1. 疲労以外の7項目の平均 (discipline の位置を変更)
+        pos_cols = [
+            'focus', 'efficiency', 'motivation', 'condition', 
+            'discipline', 'sleepQuality', 'sexualDesire'
+        ]
+        
+        # 存在しないカラムがある場合のハンドリング
+        existing_cols = [c for c in pos_cols if c in df.columns]
+        base_avg = df[existing_cols].mean(axis=1)
         
         # 2. 疲労ペナルティの基本値 (0.0 〜 1.0)
         fatigue_penalty = (df['fatigue'] - 1) / 6.0

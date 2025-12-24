@@ -39,7 +39,7 @@ public class DailyScoreTest {
     void testCalculateAverage(int libido, int fatigue, int others, double expected, String desc) {
         // Arrange
         DailyScore score = new DailyScore(
-            LocalDate.now(), others, others, others, others, fatigue, others, libido
+            LocalDate.now(), others, others, others, others, others, fatigue, others, libido
         );
 
         // Act

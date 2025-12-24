@@ -83,11 +83,12 @@
                     <thead>
                         <tr>
                             <th rowspan="2">日付</th>
-                            <th colspan="7">個別スコア (1-7)</th>
+                            <th colspan="8">個別スコア (1-7)</th>
                             <th colspan="2" rowspan="2">総合評価</th>
                         </tr>
                         <tr>
                             <th>集中</th><th>効率</th><th>意欲</th><th>体調</th>
+                            <th>規律</th> 
                             <th>疲労</th><th>睡眠</th><th>性欲</th>
                         </tr>
                     </thead>
@@ -98,6 +99,7 @@
                             <td th:text="${score.efficiencyScore}"></td>
                             <td th:text="${score.motivationScore}"></td>
                             <td th:text="${score.conditionScore}"></td>
+                            <td th:text="${score.discipline}"></td> 
                             <td th:text="${score.fatigueScore}"></td>
                             <td th:text="${score.sleepScore}"></td>
                             <td th:text="${score.sexualDesireScore}"></td>
