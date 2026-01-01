@@ -71,7 +71,9 @@ public class WebController {
         try {
             scoreService.registerScore(form);
             redirectAttributes.addFlashAttribute("message", "スコアを登録・更新しました。");
-            return "redirect:/";
+            // 変更前: return "redirect:/"; 
+            // 変更後: 明示的に /search へリダイレクトする
+            return "redirect:/search"; 
         } catch (Exception e) {
             log.error(">>>>>> ❌ 登録エラー: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", "登録中にエラーが発生しました。");

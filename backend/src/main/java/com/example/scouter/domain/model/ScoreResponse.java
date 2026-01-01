@@ -1,20 +1,27 @@
 package com.example.scouter.domain.model;
 
 import java.time.LocalDate;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * 画面表示用の型安全なデータ転送オブジェクト (Java Record)
+ * 画面表示用のデータ転送オブジェクト
+ * Record型から通常のClass型に変更し、Thymeleafとの親和性を高める
  */
-public record ScoreResponse(
-    LocalDate date,
-    int focusScore,
-    int efficiencyScore,
-    int motivationScore,
-    int conditionScore,
-    int discipline,
-    int fatigueScore,
-    int sleepScore,
-    int sexualDesireScore,
-    double avgScore,
-    String overallEvaluation
-) {}
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ScoreResponse {
+    private LocalDate date;
+    private int focusScore;
+    private int efficiencyScore;
+    private int motivationScore;
+    private int conditionScore;
+    private int disciplineScore;
+    private int fatigueScore;
+    private int sleepScore;
+    private int sexualDesireScore;
+    private double avgScore;
+    private String overallEvaluation;
+}
